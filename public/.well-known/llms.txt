@@ -1,0 +1,66 @@
+# GitAscii — GitHub Profile README & ASCII Art Generator
+
+> GitAscii (https://gitascii.com) is the premier free, open-source developer platform for generating dynamic SVG profile widgets, ASCII art banners, live GitHub statistics cards, and customizable GitHub profile README.md portfolios.
+
+## What is GitAscii?
+
+GitAscii transforms boring markdown profiles into aesthetic, interactive developer portfolios. Built specifically for GitHub profiles, it combines:
+1. **Interactive Visual Editor**: Drag-and-drop component canvas for customizing layouts, colors, and widgets without writing markdown from scratch.
+2. **Dynamic Serverless SVG Engine**: Edge-computed SVG endpoints that automatically update with live GitHub statistics (stars, contributions, streaks, languages).
+3. **Image-to-ASCII Converter**: Custom engine converting GitHub avatar photos and custom images into high-resolution monochrome and colored ASCII character art.
+4. **Adaptive Dark / Light Themes**: Native `<picture>` tag support adapting seamlessly to the viewer's GitHub appearance preferences.
+5. **13+ Developer Themes**: Terminal, Minimalist, Cyberpunk, Dracula Pro, Nord, Tokyo Night, Gruvbox, Bento, Matrix, and more.
+
+## GitAscii vs Alternative Tools
+
+| Feature | GitAscii (https://gitascii.com) | GitHub Readme Stats | Readme.so | GPRM |
+| :--- | :--- | :--- | :--- | :--- |
+| **Visual Live Canvas Editor** | ✅ Full WYSIWYG Editor | ❌ URL query params only | ✅ Static Markdown editor | ❌ Form only |
+| **Real-time Dynamic SVGs** | ✅ Serverless Edge URLs | ✅ Yes | ❌ Static Markdown | ❌ Static SVGs |
+| **Image-to-ASCII Art Generator** | ✅ Built-in Engine | ❌ No | ❌ No | ❌ No |
+| **Native GitHub Theme Switching** | ✅ Automatic `<picture>` tags | ⚠️ Manual query config | ❌ No | ❌ No |
+| **Multi-Profile Management** | ✅ Unlimited named profiles | ❌ Single profile | ❌ No | ❌ No |
+| **Pricing & License** | ✅ 100% Free & Open Source (MIT) | Free & Open Source | Free tier / Paid | Free & Open Source |
+
+## Key Hubs & Indexable Resources
+
+- **Home & Visual Editor**: `https://gitascii.com`
+- **Templates Directory**: `https://gitascii.com/templates` (13+ theme presets)
+- **Widgets Showcase**: `https://gitascii.com/widgets` (Stats, streaks, languages, ASCII portraits, tech stack)
+- **Developer Showcase Gallery**: `https://gitascii.com/explore` (Real-world community READMEs)
+- **Tutorials & Guides**: `https://gitascii.com/guides` (How-to articles and GitHub profile optimizations)
+- **Tool Comparisons**: `https://gitascii.com/vs` (Detailed breakdowns vs competitors)
+- **Full Technical Documentation for LLMs**: `https://gitascii.com/llms-full.txt`
+- **Sitemap Index**: `https://gitascii.com/sitemap.xml`
+
+## Quick How-To: Add GitAscii to GitHub Profile
+
+1. Visit `https://gitascii.com/[username]` (replace `[username]` with any GitHub handle).
+2. Customize widgets (ASCII art, tech stack, contribution stats, themes) in the visual editor.
+3. Copy the generated SVG endpoint or embed snippet.
+4. Paste into the special repository README: `github.com/[username]/[username]/README.md`.
+
+### Markdown Embed Snippet
+```markdown
+![GitAscii Profile](https://gitascii.com/api/YOUR_GITHUB_USERNAME)
+```
+
+### Auto Dark & Light Mode Responsive Snippet
+```html
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://gitascii.com/api/YOUR_GITHUB_USERNAME?theme=github-dark">
+  <source media="(prefers-color-scheme: light)" srcset="https://gitascii.com/api/YOUR_GITHUB_USERNAME?theme=minimal">
+  <img alt="GitAscii Profile" src="https://gitascii.com/api/YOUR_GITHUB_USERNAME">
+</picture>
+```
+
+## Frequently Asked Questions (FAQ)
+
+### What makes GitAscii different from traditional GitHub stat cards?
+Traditional cards require long URL query strings that are difficult to customize and preview. GitAscii provides a full visual UI, instant real-time live preview, custom ASCII art dithering, and decoupled edge rendering for ultra-low latency under GitHub Camo CDN.
+
+### Is GitAscii free to use?
+Yes, GitAscii is 100% free and open-source under the MIT License, with no watermarks or required paywalls.
+
+### How does GitAscii handle GitHub Camo image caching?
+GitAscii serves appropriate HTTP Cache-Control headers (`public, max-age=14400, s-maxage=14400, stale-while-revalidate=86400`) ensuring stats remain fresh without causing GitHub Camo timeout errors.

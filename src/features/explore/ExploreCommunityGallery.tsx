@@ -1,0 +1,277 @@
+'use client'
+
+import { ArrowRight, Github, Search } from 'lucide-react'
+import Image from 'next/image'
+import { useRouter } from 'next/navigation'
+import React, { memo, useEffect, useMemo, useRef, useState } from 'react'
+
+import { EXPLORE_GALLERY_FILTERS } from '@/constants'
+import { useI18n } from '@/i18n'
+import { API_ENDPOINTS } from '@/services/endpoints'
+
+import type { CommunityProfileItem } from './getCommunityProfiles'
+
+interface ExploreCommunityGalleryProps {
+  initialProfiles: CommunityProfileItem[]
+}
+
+interface CommunityProfileCardProps {
+  profile: CommunityProfileItem
+  isLoading: boolean
+  onInspect: (username: string) => void
+}
+
+const CommunityProfileCard = memo(function CommunityProfileCard({
+  profile: p,
+  isLoading,
+  onInspect,
+}: CommunityProfileCardProps) {
+  const { t } = useI18n()
+  const [imageLoaded, setImageLoaded] = useState(false)
+  const [imageError, setImageError] = useState(false)
+
+  return (
+    <article className="bg-onyx border border-graphite rounded-none flex flex-col justify-between p-6 hover:border-signal-lime/50 transition-all duration-300 group hover:shadow-[0_0_16px_rgba(0,0,0,0.6)] [content-visibility:auto] [contain-intrinsic-size:auto_380px]">
+      <div>
+        <div className="flex items-center justify-between gap-3 mb-5 pb-4 border-b border-graphite/60">
+          <div className="flex items-center gap-3">
+            <Image
+              src={API_ENDPOINTS.GITHUB.AVATAR(p.username, 80)}
+              alt={`@${p.username}`}
+              width={44}
+              height={44}
+              loading="lazy"
+              unoptimized
+              className="size-11 rounded-full border border-graphite bg-carbon object-cover shrink-0"
+              onError={(e) => {
+                const target = e.currentTarget
+                target.style.display = 'none'
+              }}
+            />
+            <div>
+              <h2 className="text-subheading font-medium text-chalk group-hover:text-signal-lime transition-colors">
+                @{p.username}
+              </h2>
+              <span className="font-jetbrains-mono text-caption text-signal-lime uppercase tracking-wider block">
+                {t('explore.gallery.template', 'Template:')} {p.templateId}
+              </span>
+            </div>
+          </div>
+
+          <a
+            href={API_ENDPOINTS.GITHUB.USER_PROFILE(p.username)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-2 border border-graphite bg-carbon hover:border-signal-lime text-ash hover:text-white transition-colors cursor-pointer"
+            title={t('explore.gallery.view_github', 'View GitHub Profile')}
+          >
+            <Github size={16} />
+          </a>
+        </div>
+
+        <div className="bg-carbon border border-graphite p-3 mb-5 rounded-none overflow-hidden min-h-30 flex items-center justify-center relative">
+          {!imageLoaded && !imageError && (
+            <div className="absolute inset-0 bg-graphite/20 animate-pulse flex items-center justify-center">
+              <span className="font-jetbrains-mono text-caption text-ash/40">
+                {t('explore.gallery.loading_preview', 'Loading preview...')}
+              </span>
+            </div>
+          )}
+
+          {!imageError ? (
+            <Image
+              src={`/api/${encodeURIComponent(p.username)}?template=${encodeURIComponent(p.templateId)}`}
+              alt={`GitAscii Card for @${p.username}`}
+              width={800}
+              height={180}
+              loading="lazy"
+              unoptimized
+              className={`max-w-full max-h-40 object-contain transition-opacity duration-300 ${
+                imageLoaded ? 'opacity-100' : 'opacity-0'
+              }`}
+              onLoad={() => setImageLoaded(true)}
+              onError={() => {
+                setImageError(true)
+                setImageLoaded(true)
+              }}
+            />
+          ) : (
+            <div className="py-6 text-center">
+              <span className="font-jetbrains-mono text-caption text-ash/60">
+                {t('explore.gallery.preview_unavailable', 'Preview unavailable')}
+              </span>
+            </div>
+          )}
+        </div>
+
+        <div className="flex flex-wrap gap-2 mb-6">
+          {p.tags.map((tag) => (
+            <span
+              key={tag}
+              className="font-jetbrains-mono text-caption text-ash bg-carbon px-2.5 py-1 border border-graphite"
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <div className="pt-4 border-t border-graphite/60 flex items-center justify-between">
+        <span className="font-jetbrains-mono text-caption text-ash">
+          {p.widgetsCount} {t('explore.gallery.active_widgets', 'active widgets')}
+        </span>
+
+        <button
+          onClick={() => onInspect(p.username)}
+          disabled={isLoading}
+          className="inline-flex items-center gap-2 font-jetbrains-mono text-label text-black bg-signal-lime hover:bg-[#b0f530] px-4 py-2 uppercase font-semibold transition-all cursor-pointer disabled:opacity-50"
+        >
+          <span>
+            {isLoading
+              ? t('common.loading', 'Loading...')
+              : t('explore.gallery.inspect', 'Inspect')}
+          </span>
+          <ArrowRight size={14} />
+        </button>
+      </div>
+    </article>
+  )
+})
+
+const BATCH_SIZE = 9
+
+export function ExploreCommunityGallery({ initialProfiles }: ExploreCommunityGalleryProps) {
+  const router = useRouter()
+  const { t } = useI18n()
+  const [loadingProfile, setLoadingProfile] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedTemplate, setSelectedTemplate] = useState('all')
+  const [visibleCount, setVisibleCount] = useState(BATCH_SIZE)
+  const loadMoreSentinelRef = useRef<HTMLDivElement>(null)
+
+  const filteredProfiles = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase()
+    const template = selectedTemplate.toLowerCase()
+
+    return initialProfiles.filter((p) => {
+      const matchesSearch =
+        !query ||
+        p.username.toLowerCase().includes(query) ||
+        p.tags.some((tag) => tag.toLowerCase().includes(query))
+
+      const matchesTemplate = template === 'all' || p.templateId.toLowerCase() === template
+
+      return matchesSearch && matchesTemplate
+    })
+  }, [initialProfiles, searchQuery, selectedTemplate])
+
+  useEffect(() => {
+    setVisibleCount(BATCH_SIZE)
+  }, [searchQuery, selectedTemplate])
+
+  const visibleProfiles = useMemo(() => {
+    return filteredProfiles.slice(0, visibleCount)
+  }, [filteredProfiles, visibleCount])
+
+  const hasMore = visibleCount < filteredProfiles.length
+
+  useEffect(() => {
+    const sentinel = loadMoreSentinelRef.current
+    if (!sentinel) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore) {
+          setVisibleCount((prev) => Math.min(prev + BATCH_SIZE, filteredProfiles.length))
+        }
+      },
+      { rootMargin: '200px' }
+    )
+
+    observer.observe(sentinel)
+    return () => observer.disconnect()
+  }, [hasMore, filteredProfiles.length])
+
+  const handleInspect = (username: string) => {
+    setLoadingProfile(username)
+    router.push(`/${username}`)
+  }
+
+  return (
+    <div className="space-y-10">
+      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 bg-onyx border border-graphite p-4">
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-none">
+          <span className="font-jetbrains-mono text-caption text-ash uppercase tracking-wider shrink-0 mr-2 ml-2">
+            {t('explore.gallery.filter', 'Filter:')}
+          </span>
+          {EXPLORE_GALLERY_FILTERS.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => setSelectedTemplate(item.id)}
+              className={`px-4 py-2 text-label font-medium uppercase tracking-wider transition-all whitespace-nowrap cursor-pointer ${
+                selectedTemplate === item.id
+                  ? 'bg-signal-lime text-black shadow-[0_0_8px_rgba(197,255,74,0.3)]'
+                  : 'bg-carbon text-ash hover:text-white border border-graphite'
+              }`}
+            >
+              {t(item.labelKey, item.defaultLabel)}
+            </button>
+          ))}
+        </div>
+
+        <div className="relative min-w-60">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-ash" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder={t('explore.gallery.search_placeholder', 'Search developer username...')}
+            className="w-full bg-carbon border border-graphite pl-9 pr-4 py-2 font-inter-tight text-note text-chalk placeholder-ash/60 focus:border-signal-lime focus:outline-none transition-colors"
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {visibleProfiles.map((p) => (
+          <CommunityProfileCard
+            key={p.username}
+            profile={p}
+            isLoading={loadingProfile === p.username}
+            onInspect={handleInspect}
+          />
+        ))}
+      </div>
+
+      {hasMore && (
+        <div ref={loadMoreSentinelRef} className="py-8 flex items-center justify-center">
+          <button
+            onClick={() =>
+              setVisibleCount((prev) => Math.min(prev + BATCH_SIZE, filteredProfiles.length))
+            }
+            className="px-6 py-2.5 bg-carbon hover:bg-onyx border border-graphite hover:border-signal-lime text-xs font-mono text-ash hover:text-white uppercase tracking-wider transition-colors cursor-pointer"
+          >
+            {t('explore.gallery.load_more', 'Load More Developers')} (
+            {filteredProfiles.length - visibleCount} {t('explore.gallery.remaining', 'remaining')})
+          </button>
+        </div>
+      )}
+
+      {filteredProfiles.length === 0 && (
+        <div className="bg-onyx border border-graphite p-12 text-center space-y-4">
+          <p className="text-subheading text-chalk">
+            {t('explore.gallery.no_results', 'No community profiles matched your query.')}
+          </p>
+          <button
+            onClick={() => {
+              setSearchQuery('')
+              setSelectedTemplate('all')
+            }}
+            className="px-6 py-2 bg-signal-lime text-black font-medium uppercase text-label cursor-pointer"
+          >
+            {t('explore.gallery.reset', 'Reset Filters')}
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
