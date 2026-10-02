@@ -235,3 +235,9 @@ Distributed under the **GNU General Public License v3.0 (GPLv3)**. See [`LICENSE
 <div align="center">
   <sub>Engineered with design obsession by <a href="https://github.com/Igorcbraz"><b>@Igorcbraz</b></a>.</sub>
 </div>
+
+---
+
+## Built by
+
+Built by **Girish Lade** — https://ladestack.in
